@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TECHFEST 2050 — The Last Transmission</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Sora:wght@600;700;800&family=Geist:wght@300;400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --cyan:#00dce5;--cyan-bright:#00f5ff;--cyan-dim:#63f7ff;
+  --violet:#571bc1;--violet-light:#c4abff;--pink:#fface8;
+  --surface:#0d1515;--surface-low:#151d1d;--surface-mid:#192121;
+  --surface-high:#232b2c;--surface-top:#2e3637;
+  --text:#dce4e4;--text-dim:#b9caca;--text-faint:#849495;
+  --outline:#3a494a;
+}
+html{scroll-behavior:smooth}
+body{
+  background:#030712;color:var(--text);
+  font-family:'Geist',sans-serif;font-size:16px;
+  min-height:100vh;overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ─── PAGES ─── */
+.page{
+  position:fixed;inset:0;
+  display:flex;flex-direction:column;
+  overflow:hidden;
+  opacity:0;pointer-events:none;
+  transition:opacity 0.7s cubic-bezier(.16,1,.3,1),transform 0.7s cubic-bezier(.16,1,.3,1);
+  transform:translateY(24px) scale(0.98);
+  z-index:1;
+}
+.page.active{opacity:1;pointer-events:all;transform:translateY(0) scale(1);z-index:2;}
+.page.exit{opacity:0;pointer-events:none;transform:translateY(-24px) scale(1.02);}
+
+/* ─── GLOBAL BG (shared across all pages) ─── */
+.global-bg{position:fixed;inset:0;z-index:0;background:#030712;overflow:hidden;}
+.global-bg::before{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 120%,rgba(87,27,193,.28) 0%,transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% -10%,rgba(0,220,229,.1) 0%,transparent 50%),
+    radial-gradient(ellipse 40% 30% at 10% 50%,rgba(178,0,159,.08) 0%,transparent 50%);
+}
+
+/* Galaxy portal BG (only shown on landing) */
+.galaxy-portal-container{
+  position:fixed;top:50%;left:50%;width:200vw;height:200vh;
+  transform:translate(-50%,-50%);z-index:0;perspective:1500px;pointer-events:none;
+  opacity:0;transition:opacity 1.2s ease;
+}
+.galaxy-portal-container.visible{opacity:1;}
+.galaxy-portal{
+  position:absolute;top:50%;left:50%;width:100%;height:100%;
+  transform:translate(-50%,-50%) rotateX(60deg) scale(2);
+  background:radial-gradient(circle at center,rgba(87,27,193,.4) 0%,transparent 40%),
+    radial-gradient(circle at 40% 40%,rgba(0,245,255,.2) 0%,transparent 30%),
+    radial-gradient(circle at 60% 60%,rgba(178,0,159,.2) 0%,transparent 30%);
+  border-radius:50%;
+  animation:rotate-galaxy 60s linear infinite,zoom-pulse 20s ease-in-out infinite alternate;
+  filter:blur(20px);
+}
+.galaxy-core{
+  position:absolute;top:50%;left:50%;width:40vmin;height:40vmin;
+  transform:translate(-50%,-50%);
+  background:radial-gradient(circle at center,rgba(0,245,255,.6) 0%,transparent 60%);
+  border-radius:50%;box-shadow:0 0 80px #00dce5,inset 0 0 40px #fff;
+  animation:pulse-core-intense 3s ease-in-out infinite alternate;
+  filter:blur(5px);
+}
+@keyframes rotate-galaxy{0%{transform:translate(-50%,-50%) rotateX(60deg) rotateZ(0deg) scale(2)}100%{transform:translate(-50%,-50%) rotateX(60deg) rotateZ(360deg) scale(2)}}
+@keyframes zoom-pulse{0%{transform:translate(-50%,-50%) rotateX(60deg) rotateZ(0deg) scale(1.5)}100%{transform:translate(-50%,-50%) rotateX(60deg) rotateZ(180deg) scale(2.5)}}
+@keyframes pulse-core-intense{0%{transform:translate(-50%,-50%) scale(.9);opacity:.7}100%{transform:translate(-50%,-50%) scale(1.1);opacity:1}}
+
+/* Warp stars BG */
+.warp-container{position:fixed;inset:0;z-index:0;perspective:600px;overflow:hidden;pointer-events:none;}
+
+/* Fog */
+.fog-layer{position:fixed;inset:0;pointer-events:none;opacity:.4;mix-blend-mode:screen;}
+.fog-1{z-index:0;background:radial-gradient(circle at 20% 80%,rgba(87,27,193,.1) 0%,transparent 50%);animation:float-fog 15s infinite alternate ease-in-out;}
+.fog-2{z-index:0;background:radial-gradient(circle at 80% 20%,rgba(0,220,229,.05) 0%,transparent 50%);animation:float-fog 20s infinite alternate-reverse ease-in-out;}
+@keyframes float-fog{0%{transform:translate(0,0) scale(1)}100%{transform:translate(50px,-50px) scale(1.1)}}
+
+/* 3D Core rings BG */
+.techfest-core-3d{
+  position:fixed;top:50%;left:50%;
+  width:60vmin;height:60vmin;margin-top:-30vmin;margin-left:-30vmin;
+  z-index:0;transform-style:preserve-3d;
+  animation:spin-core 20s linear infinite;opacity:.1;pointer-events:none;
+}
+.core-ring{position:absolute;width:100%;height:100%;border:2px solid #00dce5;border-radius:50%;box-shadow:0 0 15px #00dce5,inset 0 0 15px #00dce5;}
+.core-ring:nth-child(1){transform:rotateX(0deg) rotateY(0deg);}
+.core-ring:nth-child(2){transform:rotateX(45deg) rotateY(45deg);}
+.core-ring:nth-child(3){transform:rotateX(90deg) rotateY(90deg);}
+@keyframes spin-core{0%{transform:rotateX(0) rotateY(0) rotateZ(0)}100%{transform:rotateX(360deg) rotateY(360deg) rotateZ(360deg)}}
+
+/* Scanlines */
+.scanlines{position:fixed;inset:0;z-index:5;pointer-events:none;background:linear-gradient(transparent 50%,rgba(0,0,0,.12) 50%);background-size:100% 4px;opacity:.35;}
+
+/* HUD corners */
+.hud-corner{position:fixed;font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(0,220,229,.55);z-index:6;pointer-events:none;letter-spacing:.08em;}
+.hud-tl{top:68px;left:16px;}
+.hud-bl{bottom:90px;left:16px;}
+.hud-br{bottom:90px;right:16px;text-align:right;}
+.hud-tr{top:68px;right:16px;}
+.hud-ring{width:32px;height:32px;border:1px dashed rgba(0,220,229,.5);border-radius:50%;animation:rotate-galaxy 10s linear infinite;}
+
+/* Particle canvas */
+#particle-canvas{position:fixed;inset:0;z-index:1;pointer-events:none;}
+
+/* ─── WARP TRANSITION ─── */
+#warp-overlay{position:fixed;inset:0;z-index:100;pointer-events:none;background:radial-gradient(circle at center,#e9feff 0%,#00f5ff 15%,#030712 70%);opacity:0;}
+#warp-overlay.active{animation:warp-flash .55s ease-out forwards;}
+@keyframes warp-flash{0%{opacity:0}18%{opacity:1}100%{opacity:0}}
+
+/* ─── LOADER ─── */
+#loader{
+  position:fixed;inset:0;z-index:9999;background:#030712;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;
+  transition:opacity 1s ease,visibility 1s ease;
+}
+#loader.hidden{opacity:0;visibility:hidden;}
+.loader-spinner{
+  width:56px;height:56px;border-radius:50%;
+  border:3px solid rgba(99,247,255,.2);
+  border-top-color:#63f7ff;
+  animation:spin 1s linear infinite;
+  box-shadow:0 0 15px rgba(0,220,229,.4);
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader-text{
+  font-family:'JetBrains Mono',monospace;font-size:13px;
+  color:var(--cyan);text-shadow:0 0 8px rgba(0,220,229,.8);
+  letter-spacing:.15em;text-transform:uppercase;min-height:20px;
+}
+
+/* ─── SHARED COMPONENTS ─── */
+.header{
+  position:relative;z-index:10;flex-shrink:0;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 20px;
+  background:rgba(13,21,21,.65);backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(0,220,229,.12);
+  box-shadow:0 0 20px rgba(0,220,229,.06);
+}
+.header-logo{display:flex;align-items:center;gap:8px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.12em;color:var(--cyan-dim);text-transform:uppercase;}
+.header-logo img{height:24px;object-fit:contain;mix-blend-mode:screen;opacity:.85;}
+.header-title{font-family:'Sora',sans-serif;font-size:12px;font-weight:700;letter-spacing:.12em;color:var(--cyan);text-transform:uppercase;}
+.header-action{display:flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);letter-spacing:.1em;text-transform:uppercase;cursor:pointer;padding:6px 10px;border-radius:6px;transition:all .2s;border:1px solid transparent;background:none;}
+.header-action:hover{color:var(--cyan);border-color:rgba(0,220,229,.3);background:rgba(0,220,229,.05);}
+.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 300;font-size:18px;line-height:1;}
+
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:4px;background:rgba(0,245,255,.08);border:1px solid rgba(0,245,255,.25);font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--cyan-dim);}
+.chip-dot{width:6px;height:6px;border-radius:50%;background:var(--cyan-dim);box-shadow:0 0 6px var(--cyan-dim);animation:pulse-dot 2s infinite;}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.4}}
+
+.glass{background:rgba(255,255,255,.02);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.08);border-radius:12px;}
+.glass-cyan{border-color:rgba(0,220,229,.2);}
+
+/* ─── BUTTONS ─── */
+.btn-primary{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:14px 32px;border-radius:50px;
+  background:rgba(13,21,21,.6);border:1px solid rgba(0,245,255,.45);
+  backdrop-filter:blur(20px);
+  font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500;
+  letter-spacing:.15em;text-transform:uppercase;color:var(--cyan-dim);
+  cursor:pointer;transition:all .4s cubic-bezier(.16,1,.3,1);
+  box-shadow:0 0 20px rgba(0,245,255,.1);
+  position:relative;overflow:hidden;
+}
+.btn-primary::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(transparent,rgba(0,245,255,.18),transparent);
+  background-size:100% 8px;
+  animation:holo-scan 2s linear infinite;pointer-events:none;
+}
+@keyframes holo-scan{0%{background-position:0 -100%}100%{background-position:0 200%}}
+.btn-primary:hover{box-shadow:0 0 40px rgba(0,245,255,.45),0 0 80px rgba(0,245,255,.15);border-color:rgba(0,245,255,.85);color:var(--cyan-bright);transform:translateY(-2px);}
+.btn-secondary{display:inline-flex;align-items:center;gap:6px;padding:8px 20px;border-radius:50px;background:transparent;border:1px solid rgba(0,220,229,.25);font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--text-dim);cursor:pointer;transition:all .3s;}
+.btn-secondary:hover{color:var(--cyan);border-color:rgba(0,220,229,.5);}
+.btn-locked{opacity:.38;cursor:not-allowed;box-shadow:none!important;transform:none!important;}
+
+.hud{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;color:rgba(0,220,229,.5);text-transform:uppercase;}
+.hud-value{color:var(--cyan-dim);}
+
+.scroll-content{flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:rgba(0,220,229,.3) rgba(13,21,21,.5);}
+.scroll-content::-webkit-scrollbar{width:4px;}
+.scroll-content::-webkit-scrollbar-track{background:rgba(13,21,21,.5);}
+.scroll-content::-webkit-scrollbar-thumb{background:rgba(0,220,229,.3);border-radius:2px;}
+
+/* Bottom nav */
+.bottom-nav{position:relative;z-index:10;display:flex;justify-content:center;padding:10px 24px 14px;flex-shrink:0;}
+.bottom-nav-inner{display:flex;gap:4px;padding:6px;border-radius:50px;background:rgba(8,16,16,.75);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.1);box-shadow:0 0 20px rgba(0,220,229,.1);}
+.nav-item{display:flex;flex-direction:column;align-items:center;padding:7px 14px;border-radius:40px;cursor:pointer;transition:all .25s;color:rgba(185,202,202,.4);font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;gap:2px;border:1px solid transparent;background:none;}
+.nav-item:hover{color:var(--text-dim);}
+.nav-item.active-nav{color:var(--cyan);background:rgba(0,220,229,.1);border-color:rgba(0,220,229,.2);box-shadow:0 0 10px rgba(0,220,229,.15);}
+.nav-item .material-symbols-outlined{font-size:19px;}
+
+/* ═══════════════════════════════════════
+   PAGE 0 — LANDING (original design faithfully reproduced)
+═══════════════════════════════════════ */
+#page-landing{background:transparent;}
+.landing-main{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:40px 24px;text-align:center;position:relative;z-index:5;
+}
+
+/* Holo jitter on logo */
+.holo-jitter{animation:jitter 3s infinite;position:relative;}
+@keyframes jitter{
+  0%,100%{transform:translateX(0);opacity:1}
+  5%{transform:translateX(-2px);opacity:.8}
+  10%{transform:translateX(2px);opacity:.9}
+  15%{transform:translateX(0);opacity:1}
+  50%{transform:translateX(0);opacity:1}
+  51%{transform:translateX(3px) skewX(10deg);filter:blur(2px) hue-rotate(90deg);opacity:.5}
+  53%{transform:translateX(-3px) skewX(-10deg);filter:blur(0) hue-rotate(0);opacity:1}
+  55%{transform:translateX(0)}
+}
+
+/* Metallic text */
+.metallic-text{
+  background:linear-gradient(to bottom,#fff 0%,#b9caca 40%,#849495 50%,#dce4e4 60%,#fff 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation:float-text 4s ease-in-out infinite;
+}
+@keyframes float-text{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+
+/* Holo button */
+.holo-button{position:relative;overflow:hidden;transition:all .3s ease;}
+.holo-button::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(to bottom,transparent 0%,rgba(0,245,255,.22) 50%,transparent 100%);
+  background-size:100% 4px;animation:holo-scan 2s linear infinite;
+  pointer-events:none;border-radius:inherit;
+}
+.holo-button:hover{box-shadow:0 0 60px rgba(0,245,255,.6)!important;}
+
+/* Title tilt */
+.title-tilt{transition:transform .1s ease-out;transform-style:preserve-3d;}
+
+/* Entrance animations */
+.main-ui-element{opacity:0;transform:translateY(30px);transition:opacity 1s cubic-bezier(.16,1,.3,1),transform 1s cubic-bezier(.16,1,.3,1);}
+.ui-visible{opacity:1;transform:translateY(0);}
+
+/* ═══════════════════════════════════════
+   PAGE 1 — MISSION BRIEFING
+═══════════════════════════════════════ */
+.mission-content{padding:28px 20px;max-width:680px;margin:0 auto;}
+.mission-terminal{
+  background:rgba(8,16,16,.85);border:1px solid rgba(0,220,229,.2);border-left:3px solid var(--cyan);
+  border-radius:10px;padding:20px;margin:20px 0;
+  font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.8;color:var(--text-dim);
+  position:relative;overflow:hidden;
+}
+.mission-terminal::before{content:'';position:absolute;top:0;left:0;width:100%;height:2px;background:linear-gradient(to right,var(--cyan),transparent);animation:scan-bar 3s linear infinite;}
+@keyframes scan-bar{0%{transform:translateY(0)}100%{transform:translateY(400px)}}
+.prompt{color:var(--cyan);margin-right:8px;}
+.warn{color:var(--pink);}
+.mission-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0;}
+.stat-card{background:rgba(8,16,16,.65);border:1px solid rgba(0,220,229,.15);border-radius:8px;padding:16px;text-align:center;}
+.stat-num{font-family:'Sora',sans-serif;font-size:26px;font-weight:700;color:var(--cyan-bright);line-height:1;margin-bottom:4px;text-shadow:0 0 12px rgba(0,245,255,.5);}
+.stat-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;color:var(--text-faint);text-transform:uppercase;}
+
+/* ═══════════════════════════════════════
+   PAGE 2 — COMMAND CENTER
+═══════════════════════════════════════ */
+.command-content{flex:1;display:flex;flex-direction:column;padding:16px 20px;gap:14px;position:relative;z-index:5;overflow-y:auto;}
+.progress-bar-wrap{background:rgba(8,16,16,.6);border:1px solid rgba(0,220,229,.15);border-radius:50px;padding:6px 14px;display:flex;align-items:center;gap:10px;font-family:'JetBrains Mono',monospace;font-size:10px;}
+.progress-track{flex:1;height:4px;background:rgba(0,220,229,.15);border-radius:2px;overflow:hidden;}
+.progress-fill{height:100%;background:linear-gradient(to right,var(--cyan),var(--cyan-bright));border-radius:2px;transition:width .8s cubic-bezier(.16,1,.3,1);box-shadow:0 0 8px var(--cyan);}
+.domains-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;flex:1;}
+.domain-card{background:rgba(13,21,21,.75);border:1px solid rgba(0,220,229,.12);border-radius:12px;padding:16px;cursor:pointer;transition:all .3s cubic-bezier(.16,1,.3,1);display:flex;flex-direction:column;gap:7px;position:relative;overflow:hidden;}
+.domain-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,220,229,.03) 0%,transparent 60%);pointer-events:none;}
+.domain-card:hover{border-color:rgba(0,220,229,.4);box-shadow:0 0 18px rgba(0,220,229,.15);transform:translateY(-2px);}
+.domain-card.completed{border-color:rgba(0,220,229,.38);background:rgba(0,220,229,.05);}
+.domain-icon{width:38px;height:38px;border-radius:8px;background:rgba(0,220,229,.08);border:1px solid rgba(0,220,229,.2);display:flex;align-items:center;justify-content:center;color:var(--cyan-dim);}
+.domain-card.completed .domain-icon{background:rgba(0,220,229,.15);color:var(--cyan-bright);}
+.domain-name{font-family:'Sora',sans-serif;font-size:13px;font-weight:700;color:var(--text);letter-spacing:-.01em;}
+.domain-status{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-faint);display:flex;align-items:center;gap:4px;}
+.domain-card.completed .domain-status{color:var(--cyan);}
+.domain-check{width:16px;height:16px;border-radius:50%;background:rgba(0,220,229,.15);border:1px solid rgba(0,220,229,.35);display:flex;align-items:center;justify-content:center;margin-left:auto;flex-shrink:0;}
+.domain-check.done{background:var(--cyan);border-color:var(--cyan);}
+.domain-check .material-symbols-outlined{font-size:10px;color:var(--surface);}
+.activate-btn-wrap{padding:6px 0 2px;display:flex;flex-direction:column;align-items:center;gap:7px;}
+.unlock-hint{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;color:rgba(0,220,229,.4);text-transform:uppercase;}
+
+/* ═══════════════════════════════════════
+   PAGE 3 — DOMAIN DETAIL
+═══════════════════════════════════════ */
+.domain-detail-content{flex:1;padding:20px;display:flex;flex-direction:column;gap:16px;position:relative;z-index:5;overflow-y:auto;}
+.domain-hero{background:rgba(8,16,16,.75);border:1px solid rgba(0,220,229,.2);border-radius:12px;padding:20px;display:flex;align-items:center;gap:14px;position:relative;overflow:hidden;}
+.domain-hero::after{content:'';position:absolute;top:0;right:0;width:100px;height:100px;background:radial-gradient(circle,rgba(0,220,229,.1) 0%,transparent 70%);border-radius:50%;}
+.domain-hero-icon{width:56px;height:56px;border-radius:12px;flex-shrink:0;background:rgba(0,220,229,.1);border:1px solid rgba(0,220,229,.3);display:flex;align-items:center;justify-content:center;color:var(--cyan-bright);}
+.domain-hero-icon .material-symbols-outlined{font-size:26px;}
+.domain-hero-title{font-family:'Sora',sans-serif;font-size:22px;font-weight:700;color:var(--text);letter-spacing:-.02em;margin-bottom:4px;}
+.domain-hero-desc{font-size:13px;color:var(--text-dim);line-height:1.6;}
+.mission-objectives{background:rgba(8,16,16,.6);border:1px solid rgba(0,220,229,.12);border-radius:10px;padding:18px;}
+.objectives-title{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.15em;color:var(--cyan-dim);text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.objective-item{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid rgba(0,220,229,.08);font-size:13px;color:var(--text-dim);line-height:1.5;}
+.objective-item:last-child{border-bottom:none;}
+.obj-num{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--cyan);min-width:18px;margin-top:2px;}
+.domain-tech-bar{background:rgba(8,16,16,.6);border:1px solid rgba(0,220,229,.12);border-radius:10px;padding:14px;display:flex;gap:7px;flex-wrap:wrap;}
+.tech-tag{padding:4px 10px;border-radius:4px;background:rgba(0,220,229,.06);border:1px solid rgba(0,220,229,.15);font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);}
+.complete-btn-zone{display:flex;flex-direction:column;align-items:center;gap:10px;padding:6px 0;}
+
+/* ═══════════════════════════════════════
+   PAGE 4 — CORE ACTIVATION
+═══════════════════════════════════════ */
+.core-content{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 24px;text-align:center;position:relative;z-index:5;}
+.core-sphere{width:200px;height:200px;position:relative;display:flex;align-items:center;justify-content:center;margin-bottom:28px;}
+.core-sphere-ring{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(0,220,229,.4);animation:spin-ring 10s linear infinite;}
+.core-sphere-ring:nth-child(2){inset:20px;animation-duration:7s;animation-direction:reverse;border-color:rgba(196,171,255,.4);}
+.core-sphere-ring:nth-child(3){inset:40px;animation-duration:15s;border-color:rgba(0,245,255,.3);}
+.core-inner{width:80px;height:80px;border-radius:50%;background:radial-gradient(circle,rgba(0,245,255,.8) 0%,rgba(0,105,110,.4) 60%,transparent 100%);box-shadow:0 0 40px rgba(0,245,255,.5),inset 0 0 20px rgba(255,255,255,.4);animation:pulse-orb 2.5s ease-in-out infinite;display:flex;align-items:center;justify-content:center;color:#003739;}
+.core-inner .material-symbols-outlined{font-size:32px;font-variation-settings:'FILL' 1;}
+@keyframes pulse-orb{0%,100%{transform:scale(1);box-shadow:0 0 30px rgba(0,245,255,.4)}50%{transform:scale(1.08);box-shadow:0 0 50px rgba(0,245,255,.6)}}
+@keyframes spin-ring{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+.core-title{font-family:'Sora',sans-serif;font-size:26px;font-weight:800;letter-spacing:-.02em;color:var(--text);margin-bottom:6px;}
+.core-sub{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.15em;color:rgba(0,220,229,.6);text-transform:uppercase;margin-bottom:28px;}
+.core-status-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:320px;margin-bottom:28px;width:100%;}
+.core-status-item{background:rgba(0,220,229,.05);border:1px solid rgba(0,220,229,.2);border-radius:8px;padding:10px;text-align:center;}
+.core-status-icon{color:var(--cyan);font-size:16px;}
+.core-status-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.08em;color:var(--text-faint);text-transform:uppercase;margin-top:4px;}
+
+/* ═══════════════════════════════════════
+   PAGE 5 — MISSION COMPLETE
+═══════════════════════════════════════ */
+.complete-content{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:36px 24px;text-align:center;position:relative;z-index:5;gap:20px;}
+.victory-badge{width:96px;height:96px;border-radius:50%;background:linear-gradient(135deg,rgba(0,220,229,.2),rgba(87,27,193,.2));border:2px solid var(--cyan);display:flex;align-items:center;justify-content:center;animation:victory-pulse 2s ease-in-out infinite;box-shadow:0 0 40px rgba(0,220,229,.3),inset 0 0 20px rgba(0,220,229,.1);}
+@keyframes victory-pulse{0%,100%{box-shadow:0 0 40px rgba(0,220,229,.3)}50%{box-shadow:0 0 80px rgba(0,220,229,.6)}}
+.victory-badge .material-symbols-outlined{font-size:46px;color:var(--cyan-bright);font-variation-settings:'FILL' 1;}
+.complete-title{font-family:'Sora',sans-serif;font-size:clamp(26px,7vw,38px);font-weight:800;letter-spacing:-.03em;background:linear-gradient(135deg,var(--cyan-bright),var(--violet-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.complete-sub{font-size:14px;color:var(--text-dim);line-height:1.7;max-width:340px;}
+.complete-actions{display:flex;flex-direction:column;gap:10px;align-items:center;}
+
+/* ─── ACTIVATION OVERLAY ─── */
+#activation-overlay{position:fixed;inset:0;z-index:200;pointer-events:none;display:flex;align-items:center;justify-content:center;opacity:0;}
+#activation-overlay.running{pointer-events:all;animation:act-bg 3.2s ease-out forwards;}
+@keyframes act-bg{0%{opacity:0}10%{opacity:1;background:radial-gradient(circle at center,rgba(0,245,255,.15) 0%,rgba(3,7,18,.96) 80%)}85%{opacity:1}100%{opacity:0}}
+.act-ring{position:absolute;width:100px;height:100px;border-radius:50%;border:2px solid var(--cyan);animation:expand-ring 3.2s ease-out forwards;opacity:0;}
+.act-ring:nth-child(2){animation-delay:.35s;}
+.act-ring:nth-child(3){animation-delay:.7s;}
+@keyframes expand-ring{0%{width:80px;height:80px;opacity:1;border-color:var(--cyan-bright)}100%{width:700px;height:700px;opacity:0;border-color:var(--cyan)}}
+.act-text{font-family:'JetBrains Mono',monospace;font-size:14px;letter-spacing:.2em;color:var(--cyan-bright);text-transform:uppercase;text-shadow:0 0 20px var(--cyan);animation:text-appear 3.2s ease-out forwards;z-index:1;}
+@keyframes text-appear{0%{opacity:0;transform:scale(.8)}20%{opacity:1;transform:scale(1.05)}80%{opacity:1}100%{opacity:0}}
+
+@media(min-width:600px){.domains-grid{grid-template-columns:repeat(3,1fr);}.mission-stats{grid-template-columns:repeat(3,1fr);}}
+</style>
+</head>
+<body>
+
+<!-- ── GLOBAL PERSISTENT BACKGROUNDS ── -->
+<div class="global-bg"></div>
+<div class="warp-container" id="warp-bg"></div>
+<div class="galaxy-portal-container" id="galaxy-portal-container">
+  <div class="galaxy-portal"></div>
+  <div class="galaxy-core"></div>
+</div>
+<div class="techfest-core-3d"><div class="core-ring"></div><div class="core-ring"></div><div class="core-ring"></div></div>
+<div class="fog-layer fog-1"></div>
+<div class="fog-layer fog-2"></div>
+<canvas id="particle-canvas"></canvas>
+<div class="scanlines"></div>
+
+<!-- HUD corners -->
+<div class="hud-corner hud-tl"><div>SYS.STATUS: ONLINE</div><div>COORD: 45.92N / 12.04E</div></div>
+<div class="hud-corner hud-tr"><div class="hud-ring"></div></div>
+<div class="hud-corner hud-bl"><div>MEM: <span id="mem-val">4096</span> TB</div></div>
+<div class="hud-corner hud-br"><div>UPLINK: STABLE</div></div>
+
+<!-- Warp flash overlay -->
+<div id="warp-overlay"></div>
+
+<!-- Activation overlay -->
+<div id="activation-overlay">
+  <div class="act-ring"></div><div class="act-ring"></div><div class="act-ring"></div>
+  <div class="act-text">TECHFEST CORE ONLINE</div>
+</div>
+
+<!-- Loader -->
+<div id="loader">
+  <div class="loader-spinner"></div>
+  <div class="loader-text" id="loader-text">INITIALIZING TECHFEST CORE...</div>
+</div>
+
+<!-- ══════════════════════════════════════
+     PAGE 0 — LANDING
+══════════════════════════════════════ -->
+<div class="page" id="page-landing">
+  <header class="header">
+    <div class="header-logo">
+      <span class="material-symbols-outlined" style="font-size:16px;color:var(--cyan-dim);">sensors</span>
+      <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_U2tTGZfrL4XyRDpxFuP4akicl9gU7MjkQDqaOpjptQN1hzeS1ZuQj6xX5odjhOpMS8ZvEqg2tKtr_n7ZqN3pAZU9Jx4jUWhlYCcf1Yg95v18LoTMJmjn8jNDmk4pmrzlbHHs_zpQURgZbslGXxj9rZlpPqqN4tNPxT2H_dMwsmpM3qS5lltfFkVVYyBY54oX1w8GUCNCsiMyPCgJYn8hqr0x3AIE0nWNy-ECqAEHd9Zwvjl3VP9akt7zpL9ioss9vgIacMXC7FnP" alt="Techfest"/>
+    </div>
+    <div style="width:40px;"></div>
+    <div class="header-action" style="cursor:default;">
+      <span class="material-symbols-outlined" style="font-size:16px;">account_circle</span>
+    </div>
+  </header>
+
+  <main class="landing-main">
+    <!-- Live chip -->
+    <div class="main-ui-element chip" style="margin-bottom:24px;transition-delay:.4s;">
+      <span class="chip-dot"></span>Live Transmission
+    </div>
+
+    <!-- Logo with holo jitter -->
+    <div class="main-ui-element holo-jitter" style="margin-bottom:20px;position:relative;transition-delay:.5s;">
+      <div style="position:absolute;inset:0;background:rgba(99,247,255,.2);filter:blur(24px);border-radius:50%;opacity:.5;"></div>
+      <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_U2tTGZfrL4XyRDpxFuP4akicl9gU7MjkQDqaOpjptQN1hzeS1ZuQj6xX5odjhOpMS8ZvEqg2tKtr_n7ZqN3pAZU9Jx4jUWhlYCcf1Yg95v18LoTMJmjn8jNDmk4pmrzlbHHs_zpQURgZbslGXxj9rZlpPqqN4tNPxT2H_dMwsmpM3qS5lltfFkVVYyBY54oX1w8GUCNCsiMyPCgJYn8hqr0x3AIE0nWNy-ECqAEHd9Zwvjl3VP9akt7zpL9ioss9vgIacMXC7FnP"
+        alt="Techfest Logo"
+        style="height:72px;width:auto;position:relative;z-index:1;filter:drop-shadow(0 0 14px #00dce5);mix-blend-mode:screen;display:block;margin:auto;"/>
+    </div>
+
+    <!-- Big title -->
+    <h1 class="main-ui-element metallic-text" id="hero-content"
+      style="font-family:'Sora',sans-serif;font-size:clamp(52px,16vw,80px);font-weight:800;letter-spacing:.04em;line-height:1;margin-bottom:8px;transition-delay:.6s;transform-style:preserve-3d;">
+      TECHFEST<br/>2050
+    </h1>
+
+    <!-- Subtitle -->
+    <p class="main-ui-element" style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.22em;color:rgba(185,202,202,.65);text-transform:uppercase;display:flex;align-items:center;gap:16px;margin-bottom:36px;transition-delay:.8s;">
+      <span style="width:32px;height:1px;background:rgba(0,220,229,.4);display:inline-block;"></span>
+      The Last Transmission
+      <span style="width:32px;height:1px;background:rgba(0,220,229,.4);display:inline-block;"></span>
+    </p>
+
+    <!-- BEGIN MISSION button -->
+    <button class="main-ui-element holo-button"
+      onclick="navTo('page-mission')"
+      style="padding:14px 40px;border-radius:50px;background:rgba(13,21,21,.5);border:1px solid rgba(99,247,255,.5);backdrop-filter:blur(20px);box-shadow:0 0 28px rgba(0,245,255,.18);cursor:pointer;transition-delay:1s;display:flex;align-items:center;gap:8px;">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500;letter-spacing:.15em;text-transform:uppercase;color:var(--cyan-dim);filter:drop-shadow(0 0 8px #00f5ff);">BEGIN MISSION</span>
+      <span class="material-symbols-outlined" style="font-size:18px;color:var(--cyan-dim);">rocket_launch</span>
+    </button>
+
+    <!-- Reference link -->
+    <a href="#" onclick="openAbout();return false;"
+      class="main-ui-element"
+      style="margin-top:14px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.15em;color:rgba(0,220,229,.5);text-decoration:none;text-transform:uppercase;display:flex;align-items:center;gap:6px;transition:color .2s;transition-delay:1.2s;">
+      <span class="material-symbols-outlined" style="font-size:14px;">terminal</span>REFERENCE
+    </a>
+
+    <!-- About panel (hidden by default) -->
+    <div id="about-section" class="glass glass-cyan" style="margin-top:24px;padding:18px 20px;max-width:380px;display:none;text-align:left;border-radius:10px;">
+      <div class="hud" style="margin-bottom:8px;">// About Techfest 2050</div>
+      <p style="font-size:13px;color:var(--text-dim);line-height:1.7;">Techfest 2050 is a transmedia experience bringing together innovation, design, and technology. Explore 6 domains — Web, Creatives, Marketing, Events, Social Outreach, and Media — to unlock the future.</p>
+    </div>
+  </main>
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <div class="bottom-nav-inner">
+      <div class="nav-item active-nav"><span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">home_max</span>HOME</div>
+      <div class="nav-item" onclick="navTo('page-command')"><span class="material-symbols-outlined">hub</span>SECTORS</div>
+      <div class="nav-item" onclick="navTo('page-mission')"><span class="material-symbols-outlined">rocket_launch</span>MISSION</div>
+      <div class="nav-item" onclick="navTo('page-archive')"><span class="material-symbols-outlined">database</span>ARCHIVE</div>
+    </div>
+  </nav>
+</div>
+
+<!-- ══════════════════════════════════════
+     PAGE 1 — MISSION BRIEFING
+══════════════════════════════════════ -->
+<div class="page" id="page-mission">
+  <header class="header">
+    <button class="header-action" onclick="navTo('page-landing')">
+      <span class="material-symbols-outlined" style="font-size:16px;">arrow_back</span>BACK
+    </button>
+    <div class="header-title">Mission Briefing</div>
+    <div style="width:64px;"></div>
+  </header>
+  <div class="scroll-content">
+    <div class="mission-content">
+      <div class="chip" style="margin-bottom:18px;"><span class="chip-dot"></span>Transmission Active</div>
+      <h2 style="font-family:'Sora',sans-serif;font-size:26px;font-weight:800;letter-spacing:-.03em;margin-bottom:8px;">MISSION_BRIEFING</h2>
+      <p style="font-size:14px;color:var(--text-dim);line-height:1.7;margin-bottom:4px;">Year 2050. The grid is fragmenting. Six critical domains of human civilization require immediate restoration. Your mission: infiltrate each sector, complete the objectives, and reactivate the Techfest Core.</p>
+      <div class="mission-terminal">
+        <div><span class="prompt">&gt;</span> INITIALIZING MISSION PROTOCOLS...</div>
+        <div><span class="prompt">&gt;</span> SCANNING 6 DOMAIN SECTORS...</div>
+        <div><span class="prompt warn">&gt;</span> WARNING: CORE DEACTIVATED — RESTORE REQUIRED</div>
+        <div><span class="prompt">&gt;</span> AGENT AUTHORIZATION: PENDING</div>
+        <div style="animation:blink 1s infinite;"><span class="prompt">&gt;</span> AWAITING MISSION START_</div>
+      </div>
+      <div class="mission-stats">
+        <div class="stat-card"><div class="stat-num">6</div><div class="stat-label">Domains</div></div>
+        <div class="stat-card"><div class="stat-num">2050</div><div class="stat-label">Year</div></div>
+        <div class="stat-card"><div class="stat-num">∞</div><div class="stat-label">Stakes</div></div>
+      </div>
+      <div class="glass glass-cyan" style="padding:14px 16px;border-radius:10px;margin-bottom:20px;">
+        <div class="hud" style="margin-bottom:10px;">// Sector Overview</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;color:var(--text-dim);">
+          <div style="display:flex;align-items:center;gap:6px;"><span class="material-symbols-outlined" style="font-size:14px;color:var(--cyan);">language</span>Web Technologies</div>
+          <div style="display:flex;align-items:center;gap:6px;"><span class="material-symbols-outlined" style="font-size:14px;color:var(--cyan);">brush</span>Creatives</div>
+          <div style="display:flex;align-items:center;gap:6px;"><span class="material-symbols-outlined" style="font-size:14px;color:var(--cyan);">campaign</span>Marketing</div>
+          <div style="display:flex;align-items:center;gap:6px;"><span class="material-symbols-outlined" style="font-size:14px;color:var(--cyan);">event</span>Events</div>
+          <div style="display:flex;align-items:center;gap:6px;"><span class="material-symbols-outlined" style="font-size:14px;color:var(--cyan);">public</span>Social Outreach</div>
+          <div style="display:flex;align-items:center;gap:6px;"><span class="material-symbols-outlined" style="font-size:14px;color:var(--cyan);">movie</span>Media</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding-bottom:40px;">
+        <button class="btn-primary" onclick="navTo('page-command')">
+          START MISSION<span class="material-symbols-outlined" style="font-size:16px;">arrow_forward</span>
+        </button>
+        <button class="btn-secondary" onclick="navTo('page-landing')">
+          <span class="material-symbols-outlined" style="font-size:12px;">home</span>BACK HOME
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     PAGE 2 — COMMAND CENTER
+══════════════════════════════════════ -->
+<div class="page" id="page-command">
+  <header class="header">
+    <button class="header-action" onclick="navTo('page-mission')">
+      <span class="material-symbols-outlined" style="font-size:16px;">arrow_back</span>BACK
+    </button>
+    <div class="header-title">Command Center</div>
+    <div style="display:flex;align-items:center;gap:6px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--cyan);padding:4px 10px;">
+      <span class="material-symbols-outlined" style="font-size:14px;color:var(--cyan);">hub</span>
+      <span id="progress-label">0/6</span>
+    </div>
+  </header>
+  <div class="command-content">
+    <div class="progress-bar-wrap">
+      <div class="hud">Mission Progress</div>
+      <div class="progress-track"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+      <div class="hud hud-value" id="progress-pct">0%</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div class="hud" style="font-size:9px;">Select a domain sector to begin</div>
+      <div class="chip" style="font-size:9px;padding:2px 8px;"><span class="chip-dot" style="width:5px;height:5px;"></span>ACTIVE</div>
+    </div>
+    <div class="domains-grid" id="domains-grid"></div>
+    <div class="activate-btn-wrap">
+      <button class="btn-primary btn-locked" id="activate-core-btn" onclick="activateCore()" style="font-size:11px;">
+        <span class="material-symbols-outlined" style="font-size:16px;">bolt</span>ACTIVATE TECHFEST CORE
+      </button>
+      <div class="unlock-hint" id="unlock-hint">Complete all 6 domains to unlock</div>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <div class="bottom-nav-inner">
+      <div class="nav-item" onclick="navTo('page-landing')"><span class="material-symbols-outlined">home_max</span>HOME</div>
+      <div class="nav-item active-nav"><span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">hub</span>SECTORS</div>
+      <div class="nav-item" onclick="navTo('page-mission')"><span class="material-symbols-outlined">rocket_launch</span>MISSION</div>
+      <div class="nav-item" onclick="navTo('page-archive')"><span class="material-symbols-outlined">database</span>ARCHIVE</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     PAGE 3 — DOMAIN DETAIL
+══════════════════════════════════════ -->
+<div class="page" id="page-domain">
+  <header class="header">
+    <button class="header-action" onclick="navTo('page-command')">
+      <span class="material-symbols-outlined" style="font-size:16px;">arrow_back</span>SECTORS
+    </button>
+    <div class="header-title" id="domain-header-title">Domain</div>
+    <div style="width:64px;"></div>
+  </header>
+  <div class="domain-detail-content" id="domain-detail-content"></div>
+</div>
+
+<!-- ══════════════════════════════════════
+     PAGE 4 — CORE ACTIVATION
+══════════════════════════════════════ -->
+<div class="page" id="page-core">
+  <header class="header">
+    <button class="header-action" onclick="navTo('page-command')">
+      <span class="material-symbols-outlined" style="font-size:16px;">arrow_back</span>BACK
+    </button>
+    <div class="header-title">Techfest Core</div>
+    <div style="width:64px;"></div>
+  </header>
+  <div class="core-content">
+    <div class="core-sphere">
+      <div class="core-sphere-ring"></div>
+      <div class="core-sphere-ring"></div>
+      <div class="core-sphere-ring"></div>
+      <div class="core-inner"><span class="material-symbols-outlined">public</span></div>
+    </div>
+    <div class="chip" style="margin-bottom:14px;"><span class="chip-dot"></span>All Domains Synchronized</div>
+    <div class="core-title">TECHFEST CORE</div>
+    <div class="core-sub">Ready for Activation</div>
+    <div class="core-status-grid">
+      <div class="core-status-item"><div class="material-symbols-outlined core-status-icon" style="font-variation-settings:'FILL' 1;">check_circle</div><div class="core-status-label">Web</div></div>
+      <div class="core-status-item"><div class="material-symbols-outlined core-status-icon" style="font-variation-settings:'FILL' 1;">check_circle</div><div class="core-status-label">Creatives</div></div>
+      <div class="core-status-item"><div class="material-symbols-outlined core-status-icon" style="font-variation-settings:'FILL' 1;">check_circle</div><div class="core-status-label">Marketing</div></div>
+      <div class="core-status-item"><div class="material-symbols-outlined core-status-icon" style="font-variation-settings:'FILL' 1;">check_circle</div><div class="core-status-label">Events</div></div>
+      <div class="core-status-item"><div class="material-symbols-outlined core-status-icon" style="font-variation-settings:'FILL' 1;">check_circle</div><div class="core-status-label">Social</div></div>
+      <div class="core-status-item"><div class="material-symbols-outlined core-status-icon" style="font-variation-settings:'FILL' 1;">check_circle</div><div class="core-status-label">Media</div></div>
+    </div>
+    <button class="btn-primary" onclick="runActivation()" style="font-size:13px;padding:16px 40px;">
+      <span class="material-symbols-outlined" style="font-size:20px;">bolt</span>ACTIVATE CORE
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     PAGE 5 — MISSION COMPLETE
+══════════════════════════════════════ -->
+<div class="page" id="page-complete">
+  <header class="header">
+    <div style="width:64px;"></div>
+    <div class="header-title" style="color:var(--cyan-bright);text-shadow:0 0 12px var(--cyan);">MISSION COMPLETE</div>
+    <div style="width:64px;"></div>
+  </header>
+  <div class="complete-content">
+    <div class="victory-badge"><span class="material-symbols-outlined">military_tech</span></div>
+    <div class="chip"><span class="chip-dot"></span>Transmission Complete</div>
+    <div class="complete-title">MISSION<br/>ACCOMPLISHED</div>
+    <p class="complete-sub">All six domains have been restored. The Techfest Core is online. The last transmission has been received — the future belongs to those who built it.</p>
+    <div class="glass glass-cyan" style="padding:14px 20px;border-radius:10px;width:100%;max-width:340px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div class="hud">Final Score</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;color:var(--cyan-bright);">6/6</div>
+      </div>
+      <div class="progress-track" style="height:5px;"><div class="progress-fill" style="width:100%"></div></div>
+    </div>
+    <div class="complete-actions">
+      <button class="btn-primary" onclick="resetProgress();navTo('page-landing')">
+        <span class="material-symbols-outlined" style="font-size:16px;">refresh</span>RESTART EXPERIENCE
+      </button>
+      <button class="btn-secondary" onclick="navTo('page-command')">
+        <span class="material-symbols-outlined" style="font-size:12px;">hub</span>EXPLORE AGAIN
+      </button>
+      <button class="btn-secondary" onclick="window.open('https://techfest.org','_blank')">
+        <span class="material-symbols-outlined" style="font-size:12px;">open_in_new</span>VISIT TECHFEST
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     PAGE 6 — ARCHIVE (Mission Archive page)
+══════════════════════════════════════ -->
+<div class="page" id="page-archive">
+  <header class="header">
+    <button class="header-action" onclick="navTo('page-landing')">
+      <span class="material-symbols-outlined" style="font-size:16px;">arrow_back</span>BACK
+    </button>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.12em;color:var(--cyan-dim);text-transform:uppercase;">MISSION_ARCHIVE_2050</div>
+    <div style="width:64px;"></div>
+  </header>
+  <div class="scroll-content">
+    <div style="padding:20px;max-width:700px;margin:0 auto;display:flex;flex-direction:column;gap:20px;">
+
+      <!-- Status row -->
+      <div style="display:flex;justify-content:space-between;align-items:center;font-family:'JetBrains Mono',monospace;font-size:10px;border-bottom:1px solid rgba(0,220,229,.15);padding-bottom:10px;">
+        <div style="display:flex;align-items:center;gap:8px;color:var(--cyan-dim);">
+          <span style="width:6px;height:6px;border-radius:50%;background:var(--cyan-dim);box-shadow:0 0 8px var(--cyan);display:inline-block;animation:pulse-dot 2s infinite;"></span>
+          ARCHIVE SECURE // UPLINK ACTIVE
+        </div>
+        <span style="background:rgba(0,245,255,.1);border:1px solid rgba(0,245,255,.3);color:var(--cyan-dim);padding:2px 8px;border-radius:3px;font-size:9px;">V.2050.5</span>
+      </div>
+
+      <!-- Hero sphere section -->
+      <div style="background:rgba(8,16,16,.7);border:1px solid rgba(0,220,229,.2);border-radius:12px;padding:32px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;min-height:200px;">
+        <div style="position:absolute;inset:0;background:radial-gradient(circle at center,rgba(0,245,255,.08) 0%,transparent 70%);pointer-events:none;"></div>
+        <div style="position:relative;width:160px;height:160px;display:flex;align-items:center;justify-content:center;animation:pulse-orb 4s ease-in-out infinite;">
+          <div style="position:absolute;inset:0;border-radius:50%;border:1px solid rgba(0,220,229,.3);animation:spin-ring 20s linear infinite;"></div>
+          <div style="position:absolute;inset:20px;border-radius:50%;border:1px solid rgba(196,171,255,.25);animation:spin-ring 14s linear infinite reverse;"></div>
+          <div style="position:absolute;inset:40px;border-radius:50%;border:1px solid rgba(0,220,229,.2);animation:spin-ring 25s linear infinite;"></div>
+          <div style="text-align:center;z-index:1;">
+            <span class="material-symbols-outlined" style="font-size:56px;color:var(--cyan-dim);filter:drop-shadow(0 0 12px rgba(0,220,229,.8));font-variation-settings:'FILL' 0;">database</span>
+            <div style="font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:var(--text);margin-top:4px;">CORE<span style="color:var(--cyan-dim);">_DATA</span></div>
+          </div>
+        </div>
+        <!-- HUD overlay on hero -->
+        <div style="position:absolute;top:12px;left:12px;font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(0,220,229,.45);line-height:1.8;">
+          <div>[SYS_LOAD]: 42%</div>
+          <div>[MEM_ALLOC]: 8.4TB</div>
+          <div style="color:rgba(255,172,232,.6);animation:pulse-dot 1.5s infinite;">[DECODING...]</div>
+        </div>
+      </div>
+
+      <!-- Bento grid -->
+      <div style="display:grid;grid-template-columns:1fr;gap:14px;">
+
+        <!-- Past innovations -->
+        <div class="glass" style="padding:18px;border-radius:12px;border-color:rgba(0,220,229,.12);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span class="material-symbols-outlined" style="color:var(--cyan-dim);font-variation-settings:'FILL' 1;">history</span>
+              <span style="font-family:'Sora',sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;">PAST_INNOVATIONS</span>
+            </div>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text-faint);border:1px solid rgba(0,220,229,.15);padding:2px 8px;border-radius:3px;">SEC_01</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div style="background:rgba(8,16,16,.7);border:1px solid rgba(0,220,229,.12);border-radius:8px;padding:14px;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor='rgba(0,245,255,.5)'" onmouseout="this.style.borderColor='rgba(0,220,229,.12)'">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--cyan-bright);background:rgba(0,245,255,.08);padding:2px 6px;border-radius:3px;letter-spacing:.08em;">LOG_2034</span>
+                <span class="material-symbols-outlined" style="font-size:14px;color:var(--text-faint);">arrow_outward</span>
+              </div>
+              <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;">Quantum Core Alpha</div>
+              <div style="font-size:11px;color:var(--text-dim);line-height:1.5;">Initial stabilization of sub-atomic processing units.</div>
+            </div>
+            <div style="background:rgba(8,16,16,.7);border:1px solid rgba(0,220,229,.12);border-radius:8px;padding:14px;cursor:pointer;transition:all .2s;" onmouseover="this.style.borderColor='rgba(0,245,255,.5)'" onmouseout="this.style.borderColor='rgba(0,220,229,.12)'">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--pink);background:rgba(255,172,232,.06);padding:2px 6px;border-radius:3px;letter-spacing:.08em;">LOG_2041</span>
+                <span class="material-symbols-outlined" style="font-size:14px;color:var(--text-faint);">arrow_outward</span>
+              </div>
+              <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;">Neural Sync V1</div>
+              <div style="font-size:11px;color:var(--text-dim);line-height:1.5;">First successful brain-to-grid interface protocol.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tech specs & Legacy logs side by side on wider -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <!-- Tech specs -->
+          <div class="glass" style="padding:16px;border-radius:12px;border-color:rgba(255,172,232,.15);">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;">
+              <span class="material-symbols-outlined" style="color:var(--pink);font-variation-settings:'FILL' 1;">build</span>
+              <span style="font-family:'Sora',sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;">TECH_SPECS</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:0;">
+              <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(0,220,229,.1);font-size:11px;">
+                <span style="font-family:'JetBrains Mono',monospace;color:var(--text-dim);">Frame_Rate</span>
+                <span style="font-family:'JetBrains Mono',monospace;color:var(--cyan-dim);">120_FPS</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(0,220,229,.1);font-size:11px;">
+                <span style="font-family:'JetBrains Mono',monospace;color:var(--text-dim);">Bandwidth</span>
+                <span style="font-family:'JetBrains Mono',monospace;color:var(--cyan-dim);">10.5_PB/s</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(0,220,229,.1);font-size:11px;">
+                <span style="font-family:'JetBrains Mono',monospace;color:var(--text-dim);">Latency</span>
+                <span style="font-family:'JetBrains Mono',monospace;color:var(--pink);">0.001_ms</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(0,220,229,.1);font-size:11px;">
+                <span style="font-family:'JetBrains Mono',monospace;color:var(--text-dim);">Encryption</span>
+                <span style="font-family:'JetBrains Mono',monospace;color:var(--cyan-dim);">AES_1024</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;padding:7px 0;font-size:11px;">
+                <span style="font-family:'JetBrains Mono',monospace;color:var(--text-dim);">Power_Draw</span>
+                <span style="font-family:'JetBrains Mono',monospace;color:var(--cyan-dim);">Minimal</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Legacy logs / terminal -->
+          <div class="glass" style="padding:16px;border-radius:12px;border-color:rgba(0,220,229,.12);">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;">
+              <span class="material-symbols-outlined" style="color:var(--cyan-dim);font-variation-settings:'FILL' 1;">terminal</span>
+              <span style="font-family:'Sora',sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;">LEGACY_LOGS</span>
+            </div>
+            <div style="background:rgba(8,16,16,.9);border-radius:6px;border:1px solid rgba(0,220,229,.15);padding:12px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-dim);line-height:1.8;border-left:2px solid rgba(0,220,229,.4);">
+              <div><span style="color:var(--cyan);">&gt;</span> SCANNING ARCHIVE_7...</div>
+              <div><span style="color:var(--cyan);">&gt;</span> FRAGMENTS FOUND...</div>
+              <div><span style="color:var(--pink);">&gt;</span> WARN: 0x7F8B</div>
+              <div><span style="color:var(--cyan);">&gt;</span> RECONSTRUCTING...</div>
+              <div style="animation:pulse-dot 1s infinite;"><span style="color:var(--cyan);">&gt;</span> _</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- CTA to start mission -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding-bottom:40px;padding-top:8px;">
+        <button class="btn-primary" onclick="navTo('page-mission')" style="font-size:11px;">
+          <span class="material-symbols-outlined" style="font-size:16px;">rocket_launch</span>START YOUR MISSION
+        </button>
+        <button class="btn-secondary" onclick="navTo('page-command')">
+          <span class="material-symbols-outlined" style="font-size:12px;">hub</span>COMMAND CENTER
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="bottom-nav">
+    <div class="bottom-nav-inner">
+      <div class="nav-item" onclick="navTo('page-landing')"><span class="material-symbols-outlined">home_max</span>HOME</div>
+      <div class="nav-item" onclick="navTo('page-command')"><span class="material-symbols-outlined">hub</span>SECTORS</div>
+      <div class="nav-item" onclick="navTo('page-mission')"><span class="material-symbols-outlined">rocket_launch</span>MISSION</div>
+      <div class="nav-item active-nav"><span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">database</span>ARCHIVE</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════
+   DATA
+══════════════════════════════ */
+const domains=[
+  {id:'web',name:'Web',icon:'language',desc:'Build real web solutions for the digital frontier. Deploy the next generation of internet infrastructure across fragmented nodes.',objectives:['Restore decentralized web protocols','Deploy quantum-encrypted data nodes','Synchronize 2050 internet backbone','Validate inter-domain communication links'],tags:['HTML5','React','WebAssembly','Edge Computing','Quantum DNS']},
+  {id:'creatives',name:'Creatives',icon:'brush',desc:'Design the visual language of tomorrow. Craft holographic assets and AR identities for a post-digital world.',objectives:['Develop holographic brand system','Create AR identity frameworks','Produce neural-art generative sets','Calibrate chromatic resonance fields'],tags:['Holographics','AR Design','Neural Art','Brand Systems','Spatial UI']},
+  {id:'marketing',name:'Marketing',icon:'campaign',desc:'Drive user engagement across the neural network. Broadcast transmission signals to every corner of the civilization grid.',objectives:['Launch quantum broadcast campaigns','Penetrate algorithmic filter walls','Maximize human-signal reach index','Establish emotional resonance patterns'],tags:['Neural Ads','Quantum SEO','Bio-Targeting','Mindshare','Signal Analysis']},
+  {id:'events',name:'Events',icon:'event',desc:'Manage physical gatherings across the space-time grid. Coordinate hyper-venue logistics for the last great festival.',objectives:['Secure hyper-venue coordinates','Deploy crowd management AI','Activate real-time logistics mesh','Initialize emergency beacon array'],tags:['Hyper-Venues','Crowd AI','Logistics Mesh','Beacon Grid','Spatial Planning']},
+  {id:'social',name:'Social Outreach',icon:'public',desc:'Connect fragmented communities across the broken grid. Rebuild the social fabric of human civilization, one node at a time.',objectives:['Restore community mesh networks','Amplify grassroots signal nodes','Bridge cross-cultural data streams','Establish outreach relay beacons'],tags:['Community Mesh','Signal Boost','Cross-Link','Relay Nodes','Social Graph']},
+  {id:'media',name:'Media',icon:'movie',desc:'Produce and broadcast video content across the collapsing signal infrastructure. Keep the last transmission alive.',objectives:['Restore broadcast transmission towers','Produce neural-stream content','Synchronize multi-spectrum feeds','Maintain signal integrity index'],tags:['Neural Stream','Broadcast AI','Multi-Spectrum','Signal Integrity','Content Grid']}
+];
+
+const state={completed:new Set()};
+let currentPage='';
+
+/* ══════════════════════════════
+   NAVIGATION
+══════════════════════════════ */
+function navTo(id){
+  const warp=document.getElementById('warp-overlay');
+  warp.classList.add('active');
+  setTimeout(()=>warp.classList.remove('active'),600);
+
+  const old=document.getElementById(currentPage);
+  const next=document.getElementById(id);
+  if(!next||old===next)return;
+
+  if(old){old.classList.add('exit');setTimeout(()=>old.classList.remove('active','exit'),650);}
+  next.classList.add('active');
+  currentPage=id;
+
+  // Show/hide galaxy portal only on landing
+  const portal=document.getElementById('galaxy-portal-container');
+  portal.classList.toggle('visible',id==='page-landing');
+
+  if(id==='page-command')updateProgress();
+}
+
+/* ══════════════════════════════
+   PROGRESS
+══════════════════════════════ */
+function updateProgress(){
+  const n=state.completed.size;
+  const pct=Math.round(n/6*100);
+  document.getElementById('progress-fill').style.width=pct+'%';
+  document.getElementById('progress-pct').textContent=pct+'%';
+  document.getElementById('progress-label').textContent=n+'/6';
+  const btn=document.getElementById('activate-core-btn');
+  const hint=document.getElementById('unlock-hint');
+  if(n>=6){
+    btn.classList.remove('btn-locked');
+    hint.textContent='✓ All domains complete — core ready';
+    hint.style.color='var(--cyan)';
+  } else {
+    btn.classList.add('btn-locked');
+    hint.textContent='Complete all 6 domains to unlock ('+n+'/6 done)';
+    hint.style.color='';
+  }
+  renderDomains();
+}
+
+function renderDomains(){
+  const grid=document.getElementById('domains-grid');
+  grid.innerHTML='';
+  domains.forEach(d=>{
+    const done=state.completed.has(d.id);
+    const card=document.createElement('div');
+    card.className='domain-card'+(done?' completed':'');
+    card.onclick=()=>openDomain(d.id);
+    card.innerHTML=`
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="domain-icon"><span class="material-symbols-outlined" style="font-size:19px;font-variation-settings:'FILL' ${done?1:0};">${d.icon}</span></div>
+        <div class="domain-check${done?' done':''}">
+          ${done?'<span class="material-symbols-outlined" style="font-size:10px;color:var(--surface);font-variation-settings:\'FILL\' 1;">check</span>':''}
+        </div>
+      </div>
+      <div class="domain-name">${d.name}</div>
+      <div class="domain-status">
+        <span class="material-symbols-outlined" style="font-size:11px;">${done?'check_circle':'radio_button_unchecked'}</span>
+        ${done?'COMPLETE':'ENTER SECTOR'}
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function openDomain(id){
+  const d=domains.find(x=>x.id===id);
+  if(!d)return;
+  document.getElementById('domain-header-title').textContent=d.name;
+  renderDomainDetail(id);
+  navTo('page-domain');
+}
+
+function renderDomainDetail(id){
+  const d=domains.find(x=>x.id===id);
+  const done=state.completed.has(id);
+  document.getElementById('domain-detail-content').innerHTML=`
+    <div class="domain-hero">
+      <div class="domain-hero-icon"><span class="material-symbols-outlined" style="font-variation-settings:'FILL' 1;">${d.icon}</span></div>
+      <div>
+        <div class="domain-hero-title">${d.name}</div>
+        <div class="domain-hero-desc">${d.desc}</div>
+      </div>
+    </div>
+    <div class="mission-objectives">
+      <div class="objectives-title"><span class="material-symbols-outlined" style="font-size:12px;">task_alt</span>Mission Objectives</div>
+      ${d.objectives.map((o,i)=>`<div class="objective-item"><span class="obj-num">0${i+1}</span><span>${o}</span></div>`).join('')}
+    </div>
+    <div class="domain-tech-bar">
+      <div class="hud" style="width:100%;margin-bottom:4px;">// Technology Stack</div>
+      ${d.tags.map(t=>`<span class="tech-tag">${t}</span>`).join('')}
+    </div>
+    <div class="complete-btn-zone">
+      ${done
+        ?`<div style="display:flex;align-items:center;gap:8px;padding:13px 24px;border-radius:50px;background:rgba(0,220,229,.08);border:1px solid rgba(0,220,229,.3);">
+            <span class="material-symbols-outlined" style="color:var(--cyan);font-variation-settings:'FILL' 1;">check_circle</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.15em;color:var(--cyan);text-transform:uppercase;">Mission Complete</span>
+          </div>`
+        :`<button class="btn-primary" onclick="completeDomain('${id}')" style="font-size:11px;">
+            <span class="material-symbols-outlined" style="font-size:15px;">task_alt</span>
+            COMPLETE ${d.name.toUpperCase()} MISSION
+          </button>`
+      }
+      <button class="btn-secondary" onclick="navTo('page-command')">
+        <span class="material-symbols-outlined" style="font-size:12px;">arrow_back</span>BACK TO COMMAND CENTER
+      </button>
+    </div>
+  `;
+}
+
+function completeDomain(id){
+  state.completed.add(id);
+  updateProgress();
+  renderDomainDetail(id);
+}
+
+function activateCore(){
+  if(state.completed.size<6)return;
+  navTo('page-core');
+}
+
+function runActivation(){
+  const o=document.getElementById('activation-overlay');
+  o.classList.add('running');
+  setTimeout(()=>{o.classList.remove('running');navTo('page-complete');},3200);
+}
+
+function resetProgress(){
+  state.completed.clear();
+  updateProgress();
+}
+
+function openAbout(){
+  const el=document.getElementById('about-section');
+  el.style.display=el.style.display==='none'?'block':'none';
+}
+
+/* ══════════════════════════════
+   LOADER + BOOT SEQUENCE
+══════════════════════════════ */
+document.addEventListener('DOMContentLoaded',()=>{
+  const loaderText=document.getElementById('loader-text');
+  const loader=document.getElementById('loader');
+  const messages=[
+    'INITIALIZING TECHFEST CORE...',
+    'Loading Innovation Archive...',
+    'Activating AI Systems...',
+    '100%',
+    'ACCESS GRANTED'
+  ];
+  let i=0;
+  const tick=()=>{
+    if(i<messages.length){loaderText.textContent=messages[i++];setTimeout(tick,600);}
+    else{
+      loader.style.opacity='0';
+      setTimeout(()=>{
+        loader.classList.add('hidden');
+        // Show landing page
+        currentPage='page-landing';
+        const pg=document.getElementById('page-landing');
+        pg.classList.add('active');
+        // show galaxy portal
+        document.getElementById('galaxy-portal-container').classList.add('visible');
+        // Trigger entrance animations
+        setTimeout(()=>{
+          document.querySelectorAll('.main-ui-element').forEach(el=>el.classList.add('ui-visible'));
+        },100);
+      },900);
+    }
+  };
+  setTimeout(tick,400);
+
+  // Randomise MEM HUD
+  setInterval(()=>{document.getElementById('mem-val').innerText=Math.floor(Math.random()*(4096-2048)+2048);},2000);
+
+  // Tilt on landing title
+  document.addEventListener('mousemove',e=>{
+    const hero=document.getElementById('hero-content');
+    if(!hero)return;
+    const x=(e.clientX/window.innerWidth-.5)*20;
+    const y=(e.clientY/window.innerHeight-.5)*-20;
+    hero.style.transform=`rotateX(${y}deg) rotateY(${x}deg)`;
+  });
+  document.addEventListener('mouseleave',()=>{
+    const hero=document.getElementById('hero-content');
+    if(hero)hero.style.transform='rotateX(0) rotateY(0)';
+  });
+});
+
+/* ══════════════════════════════
+   PARTICLES
+══════════════════════════════ */
+(function(){
+  const canvas=document.getElementById('particle-canvas');
+  const ctx=canvas.getContext('2d');
+  let W,H,particles=[];
+
+  function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}
+  window.addEventListener('resize',resize);resize();
+
+  class P{
+    constructor(){this.reset();}
+    reset(){
+      this.x=Math.random()*W;this.y=Math.random()*H;
+      this.vx=(Math.random()-.5)*.6;this.vy=(Math.random()-.5)*.6;
+      this.r=Math.random()*1.8+.3;
+      this.col=Math.random()>.5?'rgba(0,220,229,':'rgba(196,171,255,';
+      this.a=Math.random()*.5+.15;
+    }
+    update(){
+      this.x+=this.vx;this.y+=this.vy;
+      if(this.x<0)this.x=W;if(this.x>W)this.x=0;
+      if(this.y<0)this.y=H;if(this.y>H)this.y=0;
+    }
+    draw(){ctx.beginPath();ctx.arc(this.x,this.y,this.r,0,Math.PI*2);ctx.fillStyle=this.col+this.a+')';ctx.fill();}
+  }
+  for(let i=0;i<180;i++)particles.push(new P());
+
+  let mx=null,my=null;
+  window.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;});
+  window.addEventListener('touchmove',e=>{mx=e.touches[0].clientX;my=e.touches[0].clientY;},{passive:true});
+  window.addEventListener('mouseleave',()=>{mx=null;my=null;});
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    particles.forEach(p=>{
+      if(mx!=null){const dx=mx-p.x,dy=my-p.y,d=Math.sqrt(dx*dx+dy*dy);if(d<90){p.x-=dx/d*2;p.y-=dy/d*2;}}
+      p.update();p.draw();
+    });
+    ctx.lineWidth=.4;
+    for(let i=0;i<particles.length;i++){
+      for(let j=i+1;j<particles.length;j++){
+        const dx=particles[i].x-particles[j].x,dy=particles[i].y-particles[j].y,d=Math.sqrt(dx*dx+dy*dy);
+        if(d<85){ctx.globalAlpha=(1-d/85)*.14;ctx.strokeStyle='rgba(0,220,229,1)';ctx.beginPath();ctx.moveTo(particles[i].x,particles[i].y);ctx.lineTo(particles[j].x,particles[j].y);ctx.stroke();}
+      }
+    }
+    ctx.globalAlpha=1;
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+/* ══════════════════════════════
+   WARP STARS
+══════════════════════════════ */
+(function(){
+  const c=document.getElementById('warp-bg');
+  const stars=[];
+  for(let i=0;i<80;i++){
+    const s=document.createElement('div');
+    s.style.cssText='position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;';
+    s.style.left=Math.random()*100+'vw';
+    s.style.top=Math.random()*100+'vh';
+    s.style.opacity=Math.random()*.6+.1;
+    s.style.transform='translateZ('+(Math.random()*-400)+'px)';
+    c.appendChild(s);stars.push(s);
+  }
+  let lastY=window.scrollY;
+  window.addEventListener('scroll',()=>{
+    const speed=window.scrollY-lastY;
+    stars.forEach(s=>{
+      let z=parseFloat(s.style.transform.replace(/[^0-9.-]/g,''));
+      s.style.height=(Math.abs(speed)>4?Math.abs(speed):2)+'px';
+      z+=speed;
+      if(z>0)z=-400;if(z<-400)z=0;
+      s.style.transform='translateZ('+z+'px)';
+    });
+    lastY=window.scrollY;
+  });
+})();
+
+updateProgress();
+</script>
+</body>
+</html>
